@@ -581,6 +581,11 @@
       "src": "docs/board-sample-page.png",
       "alt": "A template page combining the station name, two module rows, a green CO2 reading and the rainfall",
       "caption": "A template page of your own, with the CO2 color rule firing green below 800 ppm"
+    },
+    {
+      "src": "docs/board-co2-colors.png",
+      "alt": "Three rooms with their CO2 readings, each preceded by a green, yellow or red tile",
+      "caption": "A colour per room, decided in the template with an inline COLOR(IF(...)) formula"
     }
   ]
 }

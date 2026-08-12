@@ -102,16 +102,31 @@ REGEN {{netatmo_weather.rain_today}} MM
 
 `indoor_co2` and `outdoor_temp` ship with color rules, so the CO2 reading is green below 800 ppm, yellow past 800, orange past 1000 and red past 1400 — no template syntax needed, the colored tile is prepended for you. Both are editable per board under the plugin's color settings.
 
-### Coloring a single module
+### Sample page: a color per room
 
-Color rules attach to top-level variables only: FiestaBoard's color engine reads the first two segments of an expression, so a rule can never be hung on `modules.1.co2` — it would resolve against the whole array. Color those with an inline formula instead, which also lets you pick thresholds per room rather than accepting one set for the whole station:
+Color rules attach to top-level variables only — FiestaBoard's color engine reads the first two segments of an expression, so a rule can never be hung on `modules.1.co2`; it would resolve against the whole array. Color those with an inline formula instead, which also lets each room have its own thresholds rather than one set for the whole station:
 
 ```text
-{{= COLOR(IF(netatmo_weather.modules.1.co2 >= 1000, "red",
-          IF(netatmo_weather.modules.1.co2 >= 800, "yellow", "green"))) }}{{netatmo_weather.modules.1.co2}} PPM
+{{netatmo_weather.station}} {{netatmo_weather.updated}}
+
+{{= COLOR(IF(netatmo_weather.modules.0.co2 >= 1000, "red", IF(netatmo_weather.modules.0.co2 >= 800, "yellow", "green"))) }}{{netatmo_weather.modules.0.name}} {{netatmo_weather.modules.0.co2}} PPM
+{{= COLOR(IF(netatmo_weather.modules.1.co2 >= 1000, "red", IF(netatmo_weather.modules.1.co2 >= 800, "yellow", "green"))) }}{{netatmo_weather.modules.1.name}} {{netatmo_weather.modules.1.co2}} PPM
+{{= COLOR(IF(netatmo_weather.modules.2.co2 >= 1000, "red", IF(netatmo_weather.modules.2.co2 >= 800, "yellow", "green"))) }}{{netatmo_weather.modules.2.name}} {{netatmo_weather.modules.2.co2}} PPM
 ```
 
-Note the `{{=` — an inline formula, not a plain variable. The array is 0-indexed, so `modules.1` is the second module in your order.
+![A color per room, green at 612 ppm and red at 1180](./docs/board-co2-colors.png)
+
+Three things decide whether it works when you paste it:
+
+- **`{{=`, not `{{`.** That prefix is what makes it a formula; with plain `{{ }}` the engine looks for a variable named `COLOR(...)` and renders `???`.
+- **The color tile costs one tile**, so a Flagship row holds 21 characters of text, not 22. `SCHLAFZIMMER 1180 PPM` lands exactly on the limit.
+- **Modules without a CO2 sensor fall through to the last branch** — the outdoor module has none, so a bare comparison paints a colored tile in front of a blank number. Guard those rows:
+
+  ```text
+  {{= IF(ISBLANK(netatmo_weather.modules.3.co2), "", CONCAT(COLOR("green"), netatmo_weather.modules.3.name, " ", netatmo_weather.modules.3.co2, " PPM")) }}
+  ```
+
+The array is 0-indexed, so `modules.0` is the first module in your Modules order.
 
 ### Don't do this
 
