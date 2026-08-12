@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: Fiestaboard/FiestaBoard
+          path: fiestaboard-core
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r fiestaboard-core/requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Validate manifest
+        run: |
+          python - <<'PY'
+          import json
+          with open("manifest.json") as handle:
+              manifest = json.load(handle)
+          for field in ("id", "name", "version", "settings_schema", "variables"):
+              assert field in manifest, f"Missing required field: {field}"
+          assert manifest["id"] == "netatmo_weather", "Plugin id must match the loader directory name"
+          teaser = manifest["teaser"]
+          assert len(teaser) <= 15, f"Teaser is {len(teaser)} tiles, the Note is 15 wide"
+          shapes = {"flagship": (6, 22), "note": (3, 15)}
+          for preview in manifest["previews"]:
+              rows, cols = shapes[preview["device_type"]]
+              assert len(preview["rows"]) <= rows, f"{preview['device_type']} preview has too many rows"
+              for row in preview["rows"]:
+                  assert len(row) <= cols, f"{preview['device_type']} preview row wider than {cols}"
+          for shot in manifest.get("screenshots", []):
+              open(shot["src"]).close()
+          print("manifest.json is valid")
+          PY
+
+      - name: Set up plugin directory structure
+        run: |
+          mkdir -p plugins
+          touch plugins/__init__.py
+          ln -s .. plugins/netatmo_weather
+
+      - name: Run tests
+        env:
+          PYTHONPATH: "${{ github.workspace }}:fiestaboard-core"
+        run: |
+          cat > .coveragerc <<'RC'
+          [run]
+          omit = fiestaboard-core/*
+          RC
+          pytest tests/ -v --cov=. --cov-report=term-missing --cov-fail-under=85 --ignore=fiestaboard-core

@@ -1,0 +1,17 @@
+# Local dev scaffolding that mirrors how FiestaBoard loads the plugin.
+# CI recreates it; see README "Development".
+/plugins/
+/netatmo
+
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coveragerc
+htmlcov/
+.DS_Store
+
+# Never commit a token — the plugin caches the rotated refresh token as JSON.
+netatmo_weather_tokens.json

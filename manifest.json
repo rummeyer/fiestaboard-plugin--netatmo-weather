@@ -1,0 +1,568 @@
+{
+  "id": "netatmo_weather",
+  "name": "Netatmo Weather",
+  "version": "1.0.0",
+  "description": "Live readings from a Netatmo Weather Station — room temperature, CO2, humidity, outdoor conditions, rain and wind — one module per board row.",
+  "author": "Oliver Rummeyer",
+  "repository": "https://github.com/rummeyer/fiestaboard-plugin--netatmo-weather",
+  "documentation": "README.md",
+  "icon": "thermometer",
+  "category": "weather",
+  "fiestaboard_version": ">=8.25.0",
+  "min_refresh_seconds": 300,
+  "env_vars": [
+    {
+      "name": "NETATMO_CLIENT_ID",
+      "required": false,
+      "description": "Netatmo app client id (can also be set in the UI)"
+    },
+    {
+      "name": "NETATMO_CLIENT_SECRET",
+      "required": false,
+      "description": "Netatmo app client secret (can also be set in the UI)"
+    },
+    {
+      "name": "NETATMO_REFRESH_TOKEN",
+      "required": false,
+      "description": "Netatmo refresh token with the read_station scope (can also be set in the UI)"
+    },
+    {
+      "name": "NETATMO_TOKEN_STORE",
+      "required": false,
+      "description": "Where the rotated refresh token is cached. Defaults to netatmo_weather_tokens.json in FiestaBoard's data directory."
+    }
+  ],
+  "settings_schema": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "title": "Enabled",
+        "default": false
+      },
+      "client_id": {
+        "type": "string",
+        "title": "Client ID",
+        "description": "From your app at dev.netatmo.com. See the setup guide.",
+        "default": "",
+        "ui:widget": "password"
+      },
+      "client_secret": {
+        "type": "string",
+        "title": "Client Secret",
+        "description": "From the same app at dev.netatmo.com.",
+        "default": "",
+        "ui:widget": "password"
+      },
+      "refresh_token": {
+        "type": "string",
+        "title": "Refresh Token",
+        "description": "Generated in the app's Token Generator with the read_station scope. Netatmo rotates it on every use; the plugin keeps the rotation to itself and never overwrites this field.",
+        "default": "",
+        "ui:widget": "password"
+      },
+      "modules": {
+        "type": "array",
+        "title": "Modules",
+        "description": "Which modules go on the board, in the order they should appear. Leave empty to show everything the station has.",
+        "items": {
+          "type": "string"
+        },
+        "default": [],
+        "ui:widget": "remote-options",
+        "ui:options": {
+          "options_id": "modules",
+          "multiple": true,
+          "reorderable": true,
+          "searchable": true,
+          "cache_seconds": 300,
+          "labels_field": "module_names",
+          "placeholder": "All modules"
+        }
+      },
+      "module_names": {
+        "type": "object",
+        "title": "Short module names",
+        "description": "Optional board-sized name per module. A Flagship row is 22 tiles wide including the reading, so \"Wohnzimmer Erdgeschoss\" needs shortening.",
+        "default": {},
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "units": {
+        "type": "string",
+        "title": "Units",
+        "description": "Netatmo always reports metric; imperial is converted by the plugin.",
+        "enum": [
+          "metric",
+          "imperial"
+        ],
+        "enumNames": [
+          "Metric (°C, mm, km/h)",
+          "Imperial (°F, in, mph)"
+        ],
+        "default": "metric"
+      },
+      "decimals": {
+        "type": "integer",
+        "title": "Temperature decimals",
+        "enum": [
+          0,
+          1
+        ],
+        "enumNames": [
+          "None (21)",
+          "One (21.5)"
+        ],
+        "default": 1
+      },
+      "secondary": {
+        "type": "string",
+        "title": "Second reading",
+        "description": "Shown after the temperature, and dropped automatically when the row is too tight for it.",
+        "enum": [
+          "none",
+          "humidity",
+          "co2",
+          "battery"
+        ],
+        "enumNames": [
+          "None",
+          "Humidity",
+          "CO2",
+          "Battery"
+        ],
+        "default": "humidity"
+      },
+      "show_trend": {
+        "type": "boolean",
+        "title": "Show temperature trend",
+        "description": "Adds + / - / = for Netatmo's rising, falling and stable trend. Dropped before the second reading when space runs out.",
+        "default": false
+      },
+      "degree_sign": {
+        "type": "string",
+        "title": "Degree sign",
+        "description": "Tile 62 prints ° on a Flagship and a heart on a Note. Auto shows it only where it prints as a degree sign.",
+        "enum": [
+          "auto",
+          "on",
+          "off"
+        ],
+        "enumNames": [
+          "Auto (skip on Note)",
+          "Always",
+          "Never"
+        ],
+        "default": "auto"
+      },
+      "umlauts": {
+        "type": "string",
+        "title": "Umlauts",
+        "description": "The board has no umlaut tiles. Expand writes KUECHE, Strip writes KUCHE.",
+        "enum": [
+          "expand",
+          "strip"
+        ],
+        "enumNames": [
+          "Expand (KUECHE)",
+          "Strip (KUCHE)"
+        ],
+        "default": "expand"
+      },
+      "timezone": {
+        "type": "string",
+        "title": "Timezone",
+        "description": "IANA timezone name used for the measurement time. Leave empty to follow the FiestaBoard-wide timezone.",
+        "default": "",
+        "ui:widget": "timezone"
+      },
+      "refresh_seconds": {
+        "type": "integer",
+        "title": "Refresh Interval",
+        "description": "The station itself measures every five minutes, so anything below that only spends Netatmo's 500 calls per hour.",
+        "default": 600,
+        "minimum": 300,
+        "maximum": 3600
+      }
+    }
+  },
+  "color_rules_schema": {
+    "indoor_co2": {
+      "type": "threshold",
+      "description": "Color the CO2 reading by air quality",
+      "default_rules": [
+        {
+          "condition": ">=",
+          "value": 1400,
+          "color": "red"
+        },
+        {
+          "condition": ">=",
+          "value": 1000,
+          "color": "orange"
+        },
+        {
+          "condition": ">=",
+          "value": 800,
+          "color": "yellow"
+        },
+        {
+          "condition": "<",
+          "value": 800,
+          "color": "green"
+        }
+      ]
+    },
+    "outdoor_temp": {
+      "type": "threshold",
+      "description": "Color the outdoor temperature",
+      "default_rules": [
+        {
+          "condition": ">=",
+          "value": 30,
+          "color": "red"
+        },
+        {
+          "condition": ">=",
+          "value": 20,
+          "color": "orange"
+        },
+        {
+          "condition": ">=",
+          "value": 0,
+          "color": "green"
+        },
+        {
+          "condition": "<",
+          "value": 0,
+          "color": "blue"
+        }
+      ]
+    }
+  },
+  "variables": {
+    "groups": {
+      "station": {
+        "label": "Station"
+      },
+      "indoor": {
+        "label": "Indoor"
+      },
+      "outdoor": {
+        "label": "Outdoor"
+      },
+      "weather": {
+        "label": "Rain & Wind"
+      },
+      "layout": {
+        "label": "Board Lines"
+      }
+    },
+    "simple": {
+      "station": {
+        "description": "Station name as Netatmo has it",
+        "type": "string",
+        "max_length": 22,
+        "group": "station",
+        "example": "ZUHAUSE"
+      },
+      "updated": {
+        "description": "Local time of the most recent measurement (HH:MM)",
+        "type": "string",
+        "max_length": 5,
+        "group": "station",
+        "example": "14:35"
+      },
+      "age": {
+        "description": "Minutes since that measurement",
+        "type": "string",
+        "max_length": 4,
+        "group": "station",
+        "example": "6"
+      },
+      "module_count": {
+        "description": "How many modules the board layout is showing",
+        "type": "string",
+        "max_length": 2,
+        "group": "station",
+        "example": "4"
+      },
+      "temp_unit": {
+        "description": "Unit suffix for temperatures, board-aware (no degree sign on a Note)",
+        "type": "string",
+        "max_length": 2,
+        "group": "station",
+        "example": "°C"
+      },
+      "indoor_name": {
+        "description": "Name of the indoor module the indoor variables come from",
+        "type": "string",
+        "max_length": 22,
+        "group": "indoor",
+        "example": "WOHNZIMMER"
+      },
+      "indoor_temp": {
+        "description": "Indoor temperature, no unit suffix",
+        "type": "string",
+        "max_length": 5,
+        "group": "indoor",
+        "example": "21.5"
+      },
+      "indoor_humidity": {
+        "description": "Indoor relative humidity in percent",
+        "type": "string",
+        "max_length": 3,
+        "group": "indoor",
+        "example": "45"
+      },
+      "indoor_co2": {
+        "description": "Indoor CO2 in ppm",
+        "type": "string",
+        "max_length": 4,
+        "group": "indoor",
+        "example": "612"
+      },
+      "indoor_noise": {
+        "description": "Noise level in dB, measured by the main unit only",
+        "type": "string",
+        "max_length": 3,
+        "group": "indoor",
+        "example": "37"
+      },
+      "indoor_trend": {
+        "description": "Indoor temperature trend as + rising, - falling, = stable",
+        "type": "string",
+        "max_length": 1,
+        "group": "indoor",
+        "example": "+"
+      },
+      "pressure": {
+        "description": "Air pressure at sea level, in mbar or inHg",
+        "type": "string",
+        "max_length": 6,
+        "group": "indoor",
+        "example": "1017"
+      },
+      "pressure_trend": {
+        "description": "Pressure trend as + rising, - falling, = stable",
+        "type": "string",
+        "max_length": 1,
+        "group": "indoor",
+        "example": "-"
+      },
+      "outdoor_name": {
+        "description": "Name of the outdoor module",
+        "type": "string",
+        "max_length": 22,
+        "group": "outdoor",
+        "example": "DRAUSSEN"
+      },
+      "outdoor_temp": {
+        "description": "Outdoor temperature, no unit suffix",
+        "type": "string",
+        "max_length": 5,
+        "group": "outdoor",
+        "example": "8.4"
+      },
+      "outdoor_humidity": {
+        "description": "Outdoor relative humidity in percent",
+        "type": "string",
+        "max_length": 3,
+        "group": "outdoor",
+        "example": "78"
+      },
+      "outdoor_min": {
+        "description": "Lowest outdoor temperature so far today",
+        "type": "string",
+        "max_length": 5,
+        "group": "outdoor",
+        "example": "3.6"
+      },
+      "outdoor_max": {
+        "description": "Highest outdoor temperature so far today",
+        "type": "string",
+        "max_length": 5,
+        "group": "outdoor",
+        "example": "11.2"
+      },
+      "outdoor_trend": {
+        "description": "Outdoor temperature trend as + rising, - falling, = stable",
+        "type": "string",
+        "max_length": 1,
+        "group": "outdoor",
+        "example": "-"
+      },
+      "rain_hour": {
+        "description": "Rain in the last hour, in mm or inches",
+        "type": "string",
+        "max_length": 5,
+        "group": "weather",
+        "example": "0.4"
+      },
+      "rain_today": {
+        "description": "Rain in the last 24 hours, in mm or inches",
+        "type": "string",
+        "max_length": 5,
+        "group": "weather",
+        "example": "6.9"
+      },
+      "wind": {
+        "description": "Wind speed in km/h or mph",
+        "type": "string",
+        "max_length": 3,
+        "group": "weather",
+        "example": "12"
+      },
+      "wind_gust": {
+        "description": "Strongest gust in km/h or mph",
+        "type": "string",
+        "max_length": 3,
+        "group": "weather",
+        "example": "27"
+      },
+      "wind_from": {
+        "description": "Wind direction as an eight-point compass label",
+        "type": "string",
+        "max_length": 2,
+        "group": "weather",
+        "example": "SW"
+      },
+      "block": {
+        "description": "The whole laid-out board as one value, rows separated by newlines. Put this on the first template line to fill the board.",
+        "type": "string",
+        "max_length": 138,
+        "group": "layout",
+        "example": "WOHNZIMMER   21.5° 45%\\nKUECHE       22.1° 41%"
+      },
+      "line1": {
+        "description": "Board row 1 of the module layout, padded to the board width",
+        "type": "string",
+        "max_length": 22,
+        "group": "layout",
+        "example": "WOHNZIMMER   21.5° 45%"
+      },
+      "line2": {
+        "description": "Board row 2 of the module layout, padded to the board width",
+        "type": "string",
+        "max_length": 22,
+        "group": "layout",
+        "example": "KUECHE       22.1° 41%"
+      },
+      "line3": {
+        "description": "Board row 3 of the module layout, padded to the board width",
+        "type": "string",
+        "max_length": 22,
+        "group": "layout",
+        "example": "SCHLAFZIMMER 19.4° 52%"
+      },
+      "line4": {
+        "description": "Board row 4, empty on a Note",
+        "type": "string",
+        "max_length": 22,
+        "group": "layout",
+        "example": "DRAUSSEN      8.4° 78%"
+      },
+      "line5": {
+        "description": "Board row 5, empty on a Note",
+        "type": "string",
+        "max_length": 22,
+        "group": "layout",
+        "example": "REGEN            6.9MM"
+      },
+      "line6": {
+        "description": "Board row 6, empty on a Note",
+        "type": "string",
+        "max_length": 22,
+        "group": "layout",
+        "example": "WIND          12KMH SW"
+      }
+    },
+    "arrays": {
+      "modules": {
+        "label_field": "name",
+        "item_fields": [
+          "name",
+          "temp",
+          "humidity",
+          "co2",
+          "battery",
+          "trend",
+          "line"
+        ]
+      }
+    }
+  },
+  "max_lengths": {
+    "station": 22,
+    "indoor_name": 22,
+    "outdoor_name": 22,
+    "line1": 22,
+    "line2": 22,
+    "line3": 22,
+    "line4": 22,
+    "line5": 22,
+    "line6": 22,
+    "block": 138
+  },
+  "demo": {
+    "name": "Netatmo Weather Demo",
+    "device_type": "flagship",
+    "template": [
+      "{{netatmo_weather.block}}",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "line_metadata": [
+      {
+        "alignment": "left",
+        "wrap": false
+      },
+      {
+        "alignment": "left",
+        "wrap": false
+      },
+      {
+        "alignment": "left",
+        "wrap": false
+      },
+      {
+        "alignment": "left",
+        "wrap": false
+      },
+      {
+        "alignment": "left",
+        "wrap": false
+      },
+      {
+        "alignment": "left",
+        "wrap": false
+      }
+    ]
+  },
+  "teaser": "WOHNZIMMER 21.5",
+  "previews": [
+    {
+      "device_type": "flagship",
+      "rows": [
+        "WOHNZIMMER   21.5° 45%",
+        "KUECHE       22.1° 41%",
+        "SCHLAFZIMMER 19.4° 52%",
+        "DRAUSSEN      8.4° 78%",
+        "REGEN            6.9MM",
+        "WIND          12KMH SW"
+      ]
+    },
+    {
+      "device_type": "note",
+      "rows": [
+        "WOHNZIMMER 21.5",
+        "KUECHE     22.1",
+        "SCHLAFZIMM 19.4"
+      ]
+    }
+  ]
+}
