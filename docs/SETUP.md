@@ -134,7 +134,9 @@ A measurement your station cannot make comes out empty rather than as a zero —
 
 ### The degree sign
 
-Vestaboard character 62 is a degree sign on a Flagship and a heart on a Note — one tile, two prints. `auto` shows `°` on a Flagship and leaves it off on note-shaped boards, so a Note reads `WOHNZIMMER 21.5` rather than `WOHNZIMMER 21.5❤`. Set it to **Always** if you would rather have the heart than no unit.
+Vestaboard character 62 is a degree sign on a Flagship. A Note has a different flap at that position: some print a heart, some print nothing at all. The plugin cannot tell which flap yours has, so `auto` shows the sign only where it is known to print as one: a Flagship reads `WOHNZIMMER 21.5°`, a Note reads `WOHNZIMMER 21.5` and spends that tile on the room name instead.
+
+Set it to **Always** if your Note does print something there and you want it; set it to **Never** to drop it everywhere, including the Flagship.
 
 ### Rate limits
 
@@ -171,6 +173,8 @@ NETATMO_TOKEN_STORE=/data/netatmo_weather_tokens.json
 **Temperatures are the wrong scale.** Netatmo's API always reports Celsius, whatever your Netatmo account displays. Switch **Units** to Imperial in the plugin, not in the Netatmo app.
 
 **The measurement time is off by hours.** Check **Timezone**. Empty means the FiestaBoard-wide timezone (Settings → General), which may differ from where the board hangs.
+
+**The degree sign is a blank tile on my Note.** That is the flap, not the plugin. FiestaBoard sends character 62 to every board type — it is a degree sign on a Flagship, and on a Note it is whatever that board carries at position 62: a heart on some, an empty flap on others. Leave **Degree sign** on **Auto**, which drops it on note-shaped boards for exactly this reason.
 
 **A rain or wind variable is always empty.** Your station has no such module. The Weather Station is modular — the rain gauge and the wind gauge are separate purchases — and the plugin reports nothing rather than `0`, because a station without a rain gauge does not know that it is not raining. Either leave those variables off the page, or give them a fallback:
 

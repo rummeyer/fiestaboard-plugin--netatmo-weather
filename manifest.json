@@ -143,7 +143,7 @@
       "degree_sign": {
         "type": "string",
         "title": "Degree sign",
-        "description": "Tile 62 prints ° on a Flagship and a heart on a Note. Auto shows it only where it prints as a degree sign.",
+        "description": "Board character 62 is a degree sign on a Flagship. A Note carries a different flap at that position — a heart on some, nothing at all on others — so Auto shows the sign only where it prints as one.",
         "enum": [
           "auto",
           "on",
@@ -151,7 +151,7 @@
         ],
         "enumNames": [
           "Auto (skip on Note)",
-          "Always",
+          "Always (blank or a heart on a Note)",
           "Never"
         ],
         "default": "auto"

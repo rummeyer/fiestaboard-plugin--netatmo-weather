@@ -9,6 +9,13 @@ the two drift apart.
 
 ## [Unreleased]
 
+### Changed
+
+- The **Degree sign** setting no longer promises a heart on a Note. FiestaBoard sends character 62 to
+  every board type; a Flagship prints a degree sign, and a Note prints whatever it carries at that
+  position — a heart on some, an empty flap on others. `Auto`, the default, drops the sign on
+  note-shaped boards either way, which is why it is the default.
+
 ## [1.2.0] — 2026-08-12
 
 ### Removed

@@ -150,7 +150,7 @@ The array is 0-indexed, so `modules.0` is the first module in your Modules order
 | `decimals` | `0` \| `1` | `1` | `21` or `21.5` |
 | `secondary` | `none` \| `humidity` \| `co2` \| `battery` | `humidity` | Second reading after the temperature |
 | `show_trend` | boolean | `false` | Add `+` / `-` / `=` for the temperature trend |
-| `degree_sign` | `auto` \| `on` \| `off` | `auto` | Tile 62 prints `°` on a Flagship and a heart on a Note |
+| `degree_sign` | `auto` \| `on` \| `off` | `auto` | Tile 62 is `°` on a Flagship; a Note has another flap there — a heart, or nothing |
 | `umlauts` | `expand` \| `strip` | `expand` | `KUECHE` vs. `KUCHE` — the board has no umlaut tiles |
 | `timezone` | string | *(empty)* | IANA timezone for `updated`. Empty follows the FiestaBoard-wide timezone |
 | `refresh_seconds` | integer | `600` | Poll interval, floored at 300 seconds |
@@ -163,7 +163,7 @@ Credentials can also come from `NETATMO_CLIENT_ID`, `NETATMO_CLIENT_SECRET` and 
 - Detail is chosen for the whole board, not row by row: a column where one row kept a humidity its neighbours dropped reads as a mistake
 - Module picker fed from the account itself, with ordering and per-module short names
 - Metric and imperial, converted here because Netatmo always reports metric whatever the account displays
-- Board-aware degree sign — tile 62 is `°` on a Flagship and a heart on a Note, so `auto` drops it there
+- Board-aware degree sign — tile 62 is `°` only on a Flagship, so `auto` drops it on note-shaped boards rather than flapping whatever that board keeps at 62
 - Umlaut handling for a charset that has none: `Küche` → `KUECHE`, `Draußen` → `DRAUSSEN`
 - Default color rules for CO2 and outdoor temperature
 - Survives Netatmo's rotating refresh tokens across restarts, and repairs the chain when you paste a fresh token
