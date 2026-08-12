@@ -15,23 +15,7 @@ The plugin reads the Weather Station only. Thermostats, valves, cameras and the 
 
 ## Quick Setup
 
-### 1. Create a Netatmo app
-
-1. Sign in at [dev.netatmo.com](https://dev.netatmo.com) with the account that **owns the station** — not a shared or guest account.
-2. Open **My apps** → **Create**, give it a name (`FiestaBoard`), a one-line description, accept the terms and save.
-3. The app page now shows a **Client ID** and a **Client Secret**. Keep the tab open.
-
-### 2. Generate a refresh token
-
-On the same app page, scroll to **Token generator**:
-
-1. Tick the **`read_station`** scope. Nothing else is needed — the plugin never writes.
-2. Click **Generate Token** and approve the request.
-3. Copy the **refresh token**. The access token next to it is short-lived and is *not* what the plugin wants.
-
-The refresh token belongs to this app and this account. Revoking the app in your Netatmo account invalidates it, and so does deleting the app.
-
-### 3. Install and configure the plugin
+### 1. Enable the Plugin
 
 1. **Integrations → Install from repository:**
 
@@ -39,12 +23,32 @@ The refresh token belongs to this app and this account. Revoking the app in your
    https://github.com/rummeyer/fiestaboard-plugin--netatmo-weather
    ```
 
-2. Open the Netatmo Weather card, switch **Enabled** on, and paste **Client ID**, **Client Secret** and **Refresh Token**.
-3. Open **Modules**. The picker asks Netatmo for your station and lists every module it finds, with its current reading next to the name. Pick the ones you want, drag them into the order they should appear, and give any long-named module a short board name.
+2. Open the **Netatmo Weather** card and switch **Enabled** on. It reports itself unavailable until it has credentials — that is the next step.
+
+### 2. Configure Netatmo Weather
+
+**Create a Netatmo app.**
+
+1. Sign in at [dev.netatmo.com](https://dev.netatmo.com) with the account that **owns the station** — not a shared or guest account.
+2. Open **My apps** → **Create**, give it a name (`FiestaBoard`), a one-line description, accept the terms and save.
+3. The app page now shows a **Client ID** and a **Client Secret**. Keep the tab open.
+
+**Generate a refresh token.** On the same app page, scroll to **Token generator**:
+
+1. Tick the **`read_station`** scope. Nothing else is needed — the plugin never writes.
+2. Click **Generate Token** and approve the request.
+3. Copy the **refresh token**. The access token next to it is short-lived and is *not* what the plugin wants.
+
+The refresh token belongs to this app and this account. Revoking the app in your Netatmo account invalidates it, and so does deleting the app.
+
+**Fill in the plugin settings.**
+
+1. Paste **Client ID**, **Client Secret** and **Refresh Token** into the Netatmo Weather card.
+2. Open **Modules**. The picker asks Netatmo for your station and lists every module it finds, with its current reading next to the name. Pick the ones you want, drag them into the order they should appear, and give any long-named module a short board name.
 
    Leaving the picker empty shows every module the station has, in Netatmo's own order.
 
-### 4. Create a board template
+### 3. Create a Board Template
 
 Create a page of type *Plugin* and pick **Netatmo Weather**. The plugin fills the board itself, so no template is needed.
 
@@ -54,9 +58,30 @@ For a page of your own, put `block` on the first line and leave the rest empty:
 {{netatmo_weather.block}}
 ```
 
-### 5. View on your board
+Or compose the rows yourself — with the living room and the outdoor module selected, in that order:
+
+```text
+{{netatmo_weather.station}} {{netatmo_weather.updated}}
+
+{{netatmo_weather.line1}}
+{{netatmo_weather.line2}}
+CO2 {{netatmo_weather.indoor_co2}} PPM
+REGEN {{netatmo_weather.rain_today}} MM
+```
+
+![Sample page with a green CO2 reading](./board-sample-page.png)
+
+The green tile in front of the CO2 reading comes from the plugin's default color rules — nothing in the template asks for it.
+
+### 4. View on Your Board
 
 The board updates on your page's normal schedule. The station itself measures every five minutes, so a refresh interval of five to ten minutes is as fresh as the data ever gets.
+
+![Netatmo Weather on a Flagship](./board-display.png)
+
+On a Note the same station re-wraps to three rows, and the humidity is dropped rather than the room names:
+
+![Netatmo Weather on a Note](./board-note.png)
 
 ## Template Variables
 
@@ -115,7 +140,7 @@ Vestaboard character 62 is a degree sign on a Flagship and a heart on a Note —
 
 Netatmo allows 500 calls per hour per user. The plugin makes one call per refresh plus the occasional token renewal, so the default ten-minute interval uses about seven an hour. The floor is five minutes because that is how often the station measures.
 
-## Environment Variables
+### Environment Variables
 
 All optional — the settings form is the normal way in. These exist for installs that keep secrets outside `config.json`:
 
@@ -129,9 +154,7 @@ NETATMO_REFRESH_TOKEN=...
 NETATMO_TOKEN_STORE=/data/netatmo_weather_tokens.json
 ```
 
-### Why there is a token cache
-
-Netatmo retires a refresh token the moment it is used and hands back a new one. FiestaBoard gives plugins no way to write their own settings back, so the plugin caches the current token in `netatmo_weather_tokens.json` next to FiestaBoard's `config.json`, with owner-only permissions. The token you pasted into the settings stays the seed of that chain and is never overwritten — which is what makes re-pasting it a repair.
+**Why there is a token cache.** Netatmo retires a refresh token the moment it is used and hands back a new one. FiestaBoard gives plugins no way to write their own settings back, so the plugin caches the current token in `netatmo_weather_tokens.json` next to FiestaBoard's `config.json`, with owner-only permissions. The token you pasted into the settings stays the seed of that chain and is never overwritten — which is what makes re-pasting it a repair.
 
 ## Troubleshooting
 

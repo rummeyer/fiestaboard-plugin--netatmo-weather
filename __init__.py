@@ -726,6 +726,14 @@ class NetatmoWeatherPlugin(PluginBase):
         Runs while the settings dialog is open, on a throwaway instance with
         the draft credentials applied — so it must survive being called before
         anything is configured.
+
+        The plugin guide asks options browsing not to mutate persisted state,
+        and this method observes that with one deliberate exception: if the
+        request needs a new access token, the refresh token Netatmo rotates in
+        return is written to the token cache. Discarding it would leave the
+        cache holding a token Netatmo has just retired, so *not* writing is the
+        destructive option — it would break the next render rather than protect
+        it. Nothing else here touches stored state.
         """
         if request.options_id != "modules":
             raise NotImplementedError(request.options_id)

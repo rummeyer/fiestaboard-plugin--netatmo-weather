@@ -564,5 +564,23 @@
         "SCHLAFZIMM 19.4"
       ]
     }
+  ],
+  "screenshots": [
+    {
+      "src": "docs/board-display.png",
+      "alt": "Netatmo Weather showing six modules with temperature and humidity on a Vestaboard Flagship",
+      "caption": "Every module of the station on a Flagship",
+      "primary": true
+    },
+    {
+      "src": "docs/board-note.png",
+      "alt": "Netatmo Weather showing three rooms on a Vestaboard Note",
+      "caption": "The same station re-laid out for a Note — three rows, humidity dropped rather than the room names"
+    },
+    {
+      "src": "docs/board-sample-page.png",
+      "alt": "A template page combining the station name, two module rows, a green CO2 reading and the rainfall",
+      "caption": "A template page of your own, with the CO2 color rule firing green below 800 ppm"
+    }
   ]
 }

@@ -2,22 +2,17 @@
 
 Put a Netatmo Weather Station on the board — one module per row, name on the left, reading on the right.
 
-**→ [Setup Guide](./docs/SETUP.md)**
+![Netatmo Weather Display](./docs/board-display.png)
 
-```text
-WOHNZIMMER   21.5° 45%
-KUECHE       22.1° 41%
-SCHLAFZIMMER 19.4° 52%
-DRAUSSEN      8.4° 78%
-REGEN            6.9MM
-WIND          12KMH SW
-```
+**→ [Setup Guide](./docs/SETUP.md)**
 
 ## Overview
 
 The plugin reads `getstationsdata` for the account you connect and turns every module into a board row: indoor rooms and the main unit show temperature, the outdoor module shows the temperature outside, the rain gauge shows the last 24 hours, the wind gauge shows speed and direction.
 
 The layout is built for the board it is rendering on. A Flagship (22×6) fits six modules with humidity next to each temperature; a Note (15×3) fits three, and drops the second reading rather than shortening the room names. The module order is yours, so the three that survive on a Note are the three you ranked first.
+
+![Netatmo Weather on a Note](./docs/board-note.png)
 
 Modules are chosen from a picker fed by the account itself — no module ids to copy by hand — and each one can carry a short name for the board, because "Wohnzimmer Erdgeschoss" is 23 tiles before a single degree is shown.
 
@@ -90,20 +85,22 @@ Inside a template page, put `block` on the **first** line and leave the rest emp
 
 The rows come out padded to the full board width, so the page's own alignment setting leaves them untouched.
 
-### Sample page: indoor and outdoor, with the time
+### Sample page: two rooms, CO2 and the rain
 
-Build the rows yourself when the board is shared with something else:
+Build the rows yourself when the board is shared with something else. With the living room and the outdoor module selected, in that order:
 
 ```text
-{{date_time.time}}      {{netatmo_weather.updated}}
+{{netatmo_weather.station}} {{netatmo_weather.updated}}
+
 {{netatmo_weather.line1}}
 {{netatmo_weather.line2}}
-DRAUSSEN {{netatmo_weather.outdoor_temp}}{{netatmo_weather.temp_unit}}
 CO2 {{netatmo_weather.indoor_co2}} PPM
 REGEN {{netatmo_weather.rain_today}} MM
 ```
 
-`indoor_co2` and `outdoor_temp` ship with color rules, so the CO2 line turns yellow past 800 ppm and red past 1400 without any template syntax. Both are editable per board under the plugin's color settings.
+![Sample page with a green CO2 reading](./docs/board-sample-page.png)
+
+`indoor_co2` and `outdoor_temp` ship with color rules, so the CO2 reading is green below 800 ppm, yellow past 800, orange past 1000 and red past 1400 — no template syntax needed, the colored tile is prepended for you. Both are editable per board under the plugin's color settings.
 
 ### Don't do this
 

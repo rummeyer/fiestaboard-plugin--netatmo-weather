@@ -9,11 +9,18 @@ the two drift apart.
 
 ## [Unreleased]
 
-### Missing
+### Added
 
-- `docs/board-display.png` and the manifest's `screenshots` array. The plugin
-  directory falls back to the literal `previews` until a photograph of a real
-  board exists; the registry checklist wants a hero image before submission.
+- Board screenshots — `docs/board-display.png` (Flagship, the hero image),
+  `docs/board-note.png` and `docs/board-sample-page.png` — plus the manifest's
+  `screenshots` array, which the registry catalog reads. All three are renders
+  of what the plugin actually returns for a sample station, not mock-ups.
+
+### Changed
+
+- `docs/SETUP.md` follows the four-step *Quick Setup* order from FiestaBoard's
+  plugin development guide, and nests *Environment Variables* under
+  *Configuration Reference* as the guide's template does.
 
 ## [1.0.0] — 2026-08-12
 
