@@ -1,7 +1,7 @@
 {
   "id": "netatmo_weather",
   "name": "Netatmo Weather",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Live readings from a Netatmo Weather Station — room temperature, CO2, humidity, outdoor conditions, rain and wind — one module per board row.",
   "author": "Oliver Rummeyer",
   "repository": "https://github.com/rummeyer/fiestaboard-plugin--netatmo-weather",
