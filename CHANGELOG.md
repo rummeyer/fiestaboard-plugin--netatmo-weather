@@ -9,6 +9,27 @@ the two drift apart.
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-08-12
+
+### Removed
+
+- **`module1_*` … `module6_*`**, one release after they arrived. They existed
+  only to give colour rules a top-level field to attach to, and a template can
+  do that itself with an inline formula — with thresholds the plugin has no
+  business guessing:
+
+  ```text
+  {{= COLOR(IF(netatmo_weather.modules.1.co2 >= 1000, "red",
+            IF(netatmo_weather.modules.1.co2 >= 800, "yellow", "green"))) }}{{netatmo_weather.modules.1.co2}} PPM
+  ```
+
+  Twenty-four variables and twelve colour-rule entries were a poor trade for
+  something the template language already does, and every one of them was
+  another row in the editor's variable list. The `modules` array is unchanged
+  and remains the way to read a single module.
+- The colour rules that came with them. `indoor_co2` and `outdoor_temp` keep
+  theirs.
+
 ## [1.1.0] — 2026-08-12
 
 ### Added

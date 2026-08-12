@@ -109,10 +109,6 @@ On a Note the same station re-wraps to three rows, and the humidity is dropped r
 | `{{netatmo_weather.wind}}` / `{{netatmo_weather.wind_gust}}` / `{{netatmo_weather.wind_from}}` | Wind speed, gust, direction | `12` / `27` / `SW` |
 | `{{netatmo_weather.block}}` | The whole laid-out board, rows separated by newlines | see above |
 | `{{netatmo_weather.line1}}` … `{{netatmo_weather.line6}}` | The same rows individually | `WOHNZIMMER   21.5° 45%` |
-| `{{netatmo_weather.module1_name}}` … `module6_name` | Name of the Nth module in your order | `WOHNZIMMER` |
-| `{{netatmo_weather.module1_temp}}` … | Its temperature | `21.5` |
-| `{{netatmo_weather.module1_humidity}}` … | Its humidity | `45` |
-| `{{netatmo_weather.module1_co2}}` … | Its CO2 in ppm — **use this, not the array, when you want the colour** | `612` |
 | `{{netatmo_weather.modules.0.name}}` | Per-module array (0-indexed): `name`, `temp`, `humidity`, `co2`, `battery`, `trend`, `line` | `WOHNZIMMER` |
 
 A measurement your station cannot make comes out empty rather than as a zero — no rain gauge means a blank `rain_today`, not `0`.
@@ -176,7 +172,14 @@ NETATMO_TOKEN_STORE=/data/netatmo_weather_tokens.json
 
 **The measurement time is off by hours.** Check **Timezone**. Empty means the FiestaBoard-wide timezone (Settings → General), which may differ from where the board hangs.
 
-**A CO2 or temperature reading has no colour.** You are addressing it through the array. FiestaBoard's colour engine reads only the first two segments of a template expression, so `{{netatmo_weather.modules.1.co2}}` looks the rule up under `modules` — the whole array — and never matches. Use the flat variable for that slot instead, `{{netatmo_weather.module2_co2}}` (the array is 0-indexed, the flat variables count from 1). Temperatures also need thresholds of your own: `moduleN_temp` ships with none, because an indoor module and the one outside disagree about what counts as warm.
+**A reading from the array has no colour.** Colour rules attach to top-level variables only — FiestaBoard's colour engine reads the first two segments of an expression, so a rule on `{{netatmo_weather.modules.1.co2}}` would resolve against the whole array and never match. Either use `{{netatmo_weather.indoor_co2}}`, which carries the default rules, or colour the array value yourself with an inline formula:
+
+```text
+{{= COLOR(IF(netatmo_weather.modules.1.co2 >= 1000, "red",
+          IF(netatmo_weather.modules.1.co2 >= 800, "yellow", "green"))) }}{{netatmo_weather.modules.1.co2}} PPM
+```
+
+The `{{=` prefix is what makes it a formula rather than a variable.
 
 **Room names look mangled.** The board has no umlaut tiles. **Expand** writes `KUECHE`, **Strip** writes `KUCHE`. For anything else — accents, emoji in a room name — the character is dropped; give the module a short board name in the picker instead.
 

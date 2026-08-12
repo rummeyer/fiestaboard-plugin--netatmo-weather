@@ -351,35 +351,6 @@ class TestFetchData:
         assert modules[0]["battery"] == ""
         assert modules[1]["battery"] == "91"
 
-    def test_flat_module_variables_mirror_the_array(self, make_plugin):
-        """They exist so colour rules can reach a single module's reading.
-
-        FiestaBoard's colour engine reads only the first two segments of a
-        template expression, so `modules.1.co2` resolves its rule against the
-        whole array and never matches. `module2_co2` is a top-level field.
-        """
-        data = make_plugin().get_data(FLAGSHIP).data
-        assert (data["module1_name"], data["module1_temp"], data["module1_co2"]) == ("WOHNZIMMER", "21.5", "612")
-        assert data["module3_name"] == "SCHLAFZIMMER"
-        assert data["module3_co2"] == "1180"
-        assert [data[f"module{slot}_name"] for slot in (1, 2, 3)] == [m["name"] for m in data["modules"][:3]]
-
-    def test_flat_module_variables_follow_the_users_order(self, make_plugin):
-        data = make_plugin(modules=[OUTDOOR_ID, MAIN_ID]).get_data(FLAGSHIP).data
-        assert (data["module1_name"], data["module2_name"]) == ("DRAUSSEN", "WOHNZIMMER")
-
-    def test_slots_past_the_selection_are_empty_not_missing(self, make_plugin):
-        """A declared variable that vanished would render as the literal template text."""
-        data = make_plugin(modules=[MAIN_ID]).get_data(FLAGSHIP).data
-        assert data["module2_name"] == ""
-        assert data["module6_co2"] == ""
-
-    def test_a_module_without_a_co2_sensor_leaves_its_slot_empty(self, make_plugin):
-        """The outdoor module measures no CO2, and a zero would read as clean air."""
-        data = make_plugin(modules=[OUTDOOR_ID]).get_data(FLAGSHIP).data
-        assert data["module1_co2"] == ""
-        assert data["module1_humidity"] == "78"
-
     def test_imperial_converts_every_measurement(self, make_plugin):
         data = make_plugin(units="imperial").get_data(FLAGSHIP).data
         assert data["indoor_temp"] == "70.7"

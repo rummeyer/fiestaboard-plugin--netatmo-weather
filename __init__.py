@@ -56,14 +56,6 @@ DEFAULT_TIMEZONE = "UTC"
 FALLBACK_WIDTH = 22
 FALLBACK_HEIGHT = 6
 
-# How many modules get their own flat `moduleN_*` variables. Six, because that
-# is the most rows a Flagship can show — past that the module is in the array
-# but not on the board.
-MODULE_SLOTS = 6
-
-# Fields mirrored from the modules array into those flat variables.
-MODULE_SLOT_FIELDS = ("name", "temp", "humidity", "co2")
-
 # Characters the board can flap. Anything else is dropped rather than sent as a
 # wrong tile. Reference: src/board_chars.py in FiestaBoard.
 BOARD_CHARSET = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 !@#$()-+&=;:'\"%,./?°")
@@ -912,18 +904,6 @@ class NetatmoWeatherPlugin(PluginBase):
             }
             for reading in selected
         ]
-
-        # The same values again, one flat variable per module. They exist for
-        # colour rules: FiestaBoard's template engine reads only the first two
-        # segments of an expression, so `{{netatmo_weather.modules.1.co2}}`
-        # resolves its colour against the field "modules" — the whole list —
-        # and never matches a threshold. `module2_co2` is a top-level field, so
-        # it does. Slot N is the Nth module in the user's order, which is also
-        # the row it occupies on a board tall enough to show it.
-        for slot in range(MODULE_SLOTS):
-            entry = data["modules"][slot] if slot < len(data["modules"]) else {}
-            for field in MODULE_SLOT_FIELDS:
-                data[f"module{slot + 1}_{field}"] = entry.get(field, "")
 
         return data
 
