@@ -172,6 +172,20 @@ NETATMO_TOKEN_STORE=/data/netatmo_weather_tokens.json
 
 **The measurement time is off by hours.** Check **Timezone**. Empty means the FiestaBoard-wide timezone (Settings → General), which may differ from where the board hangs.
 
+**A rain or wind variable is always empty.** Your station has no such module. The Weather Station is modular — the rain gauge and the wind gauge are separate purchases — and the plugin reports nothing rather than `0`, because a station without a rain gauge does not know that it is not raining. Either leave those variables off the page, or give them a fallback:
+
+```text
+REGEN {{= DEFAULT(netatmo_weather.rain_today, "--") }} MM
+```
+
+To drop the whole row when the sensor is missing, build the line inside the formula:
+
+```text
+{{= IF(ISBLANK(netatmo_weather.rain_today), "", CONCAT("REGEN ", netatmo_weather.rain_today, " MM")) }}
+```
+
+The same applies to any measurement your modules do not take — `indoor_noise` is empty on a station whose main unit is out of the room, and `outdoor_*` is empty without the outdoor module.
+
 **A reading from the array has no colour.** Colour rules attach to top-level variables only — FiestaBoard's colour engine reads the first two segments of an expression, so a rule on `{{netatmo_weather.modules.1.co2}}` would resolve against the whole array and never match. Either use `{{netatmo_weather.indoor_co2}}`, which carries the default rules, or colour the array value yourself with an inline formula:
 
 ```text
