@@ -63,13 +63,32 @@ The plugin reads the Weather Station only. Thermostats, valves, cameras and the 
 | `{{netatmo_weather.wind_gust}}` | Strongest gust | `27` |
 | `{{netatmo_weather.wind_from}}` | Direction as an eight-point compass label | `SW` |
 
+### Per Module
+
+`moduleN_*` is the **Nth module in your Modules order** — the one on board row N of a Flagship. Slots past your selection are empty.
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{{netatmo_weather.module1_name}}` … `module6_name` | Module name | `WOHNZIMMER` |
+| `{{netatmo_weather.module1_temp}}` … `module6_temp` | Its temperature, no unit suffix | `21.5` |
+| `{{netatmo_weather.module1_humidity}}` … | Its relative humidity | `45` |
+| `{{netatmo_weather.module1_co2}}` … | Its CO2 in ppm, empty for modules without the sensor | `612` |
+
+**Use these, not the array, when you want a colour.** FiestaBoard's colour engine reads only the first two segments of a template expression, so `{{netatmo_weather.modules.1.co2}}` looks its rule up under the field `modules` — the whole array — and never matches a threshold. `module2_co2` is a top-level field, so the rule fires:
+
+```text
+{{netatmo_weather.module2_name}} {{netatmo_weather.module2_co2}} PPM
+```
+
+Every `moduleN_co2` ships with the air-quality thresholds. Every `moduleN_temp` appears in the colour-rules UI with no defaults, because an indoor module and the one hanging outside want different thresholds and the plugin cannot tell which slot is which.
+
 ### Board Lines
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `{{netatmo_weather.block}}` | The whole laid-out board as one value, rows separated by newlines | `WOHNZIMMER 21.5° 45% ␤ …` |
 | `{{netatmo_weather.line1}}` … `{{netatmo_weather.line6}}` | The same rows individually, padded to the board width | `WOHNZIMMER   21.5° 45%` |
-| `{{netatmo_weather.modules.0.name}}` | Per-module array: `name`, `temp`, `humidity`, `co2`, `battery`, `trend`, `line` | `WOHNZIMMER` |
+| `{{netatmo_weather.modules.0.name}}` | Per-module array: `name`, `temp`, `humidity`, `co2`, `battery`, `trend`, `line` — note the array is **0-indexed**, so `modules.0` is `module1_*` | `WOHNZIMMER` |
 
 A measurement the station did not report comes out as an empty string, not a placeholder — a station with no rain gauge leaves `rain_today` blank rather than printing `0`.
 

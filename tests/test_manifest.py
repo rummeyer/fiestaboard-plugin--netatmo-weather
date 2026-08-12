@@ -12,7 +12,15 @@ import re
 import pytest
 from src.devices import BoardContext
 
-from plugins.netatmo_weather import DEFAULT_SECONDARY, DEFAULT_UNITS, SECONDARY_CHOICES, UNITS, NetatmoWeatherPlugin
+from plugins.netatmo_weather import (
+    DEFAULT_SECONDARY,
+    DEFAULT_UNITS,
+    MODULE_SLOT_FIELDS,
+    MODULE_SLOTS,
+    SECONDARY_CHOICES,
+    UNITS,
+    NetatmoWeatherPlugin,
+)
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BOARD_SHAPES = {"flagship": (6, 22), "note": (3, 15)}
@@ -123,6 +131,33 @@ class TestVariables:
 
     def test_color_rules_name_variables_the_plugin_produces(self, manifest):
         assert set(manifest["color_rules_schema"]) <= set(manifest["variables"]["simple"])
+
+    def test_color_rules_never_name_an_array_field(self, manifest):
+        """FiestaBoard's colour engine reads only the first two segments of an
+        expression, so a rule on an array item would silently never fire.
+        """
+        arrays = set(manifest["variables"]["arrays"])
+        assert not (set(manifest["color_rules_schema"]) & arrays)
+        for field, spec in manifest["color_rules_schema"].items():
+            for rule in spec.get("default_rules", []):
+                assert {"condition", "value", "color"} <= set(rule), f"{field} has an incomplete rule"
+
+    def test_every_module_slot_is_declared_for_every_field(self, manifest):
+        declared = set(manifest["variables"]["simple"])
+        for slot in range(1, MODULE_SLOTS + 1):
+            for field in MODULE_SLOT_FIELDS:
+                assert f"module{slot}_{field}" in declared, f"module{slot}_{field} is not declared"
+
+    def test_every_module_slot_can_be_coloured(self, manifest):
+        """The whole point of the flat variables — a slot without a rule is a gap."""
+        for slot in range(1, MODULE_SLOTS + 1):
+            assert f"module{slot}_co2" in manifest["color_rules_schema"]
+            assert f"module{slot}_temp" in manifest["color_rules_schema"]
+
+    def test_module_temperature_rules_ship_without_defaults(self, manifest):
+        """An indoor slot and the outdoor one cannot share a sensible threshold."""
+        for slot in range(1, MODULE_SLOTS + 1):
+            assert "default_rules" not in manifest["color_rules_schema"][f"module{slot}_temp"]
 
 
 class TestBoardPreviews:

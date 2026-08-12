@@ -9,8 +9,22 @@ the two drift apart.
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-08-12
+
 ### Added
 
+- **`module1_*` … `module6_*`** — `name`, `temp`, `humidity` and `co2` for the
+  Nth module in your order, as flat variables alongside the `modules` array.
+  They exist because colour rules cannot reach into an array: FiestaBoard's
+  template engine reads only the first two segments of an expression, so
+  `{{netatmo_weather.modules.1.co2}}` resolves its colour against the field
+  `modules` — the whole list — and never matches a threshold.
+  `{{netatmo_weather.module2_co2}}` is a top-level field, so it does.
+- Colour rules for every `moduleN_co2`, with the same air-quality thresholds
+  as `indoor_co2`, and for every `moduleN_temp` with **no** defaults: an indoor
+  module and the one hanging outside want different thresholds, and the plugin
+  cannot tell which slot is which. The field still appears in the colour-rules
+  UI, ready for your own per-board thresholds.
 - Board screenshots — `docs/board-display.png` (Flagship, the hero image),
   `docs/board-note.png` and `docs/board-sample-page.png` — plus the manifest's
   `screenshots` array, which the registry catalog reads. All three are renders
