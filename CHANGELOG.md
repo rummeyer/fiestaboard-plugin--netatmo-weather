@@ -17,6 +17,18 @@ the two drift apart.
   board at once. A Flagship with `SCHLAFZIMMER` on it keeps `19.4° 52%`; a Note
   with the degree sign off shows `BUERO 21.5C 45%` where the name allows it.
 
+### Fixed
+
+- The declared `max_length` of `block` (138) and `line1`..`line6` (22)
+  assumed a Flagship was the largest board. A FiestaPanel accepts grids up to
+  128x96, and FiestaBoard's geometry conformance suite renders one, which
+  overran both. Raised to 12383 and 128.
+
+### Added
+
+- A `note_array` preview, and FiestaBoard's geometry conformance suite in the
+  tests, so every board shape the platform supports is rendered in CI.
+
 ## [1.2.1] — 2026-08-12
 
 Documentation only — no change to the variables, the settings or what the

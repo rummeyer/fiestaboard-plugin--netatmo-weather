@@ -429,51 +429,51 @@
         "example": "SW"
       },
       "block": {
-        "description": "The whole laid-out board as one value, rows separated by newlines. Put this on the first template line to fill the board.",
+        "description": "The whole laid-out board as one value, rows separated by newlines. Put this on the first template line to fill the board. Length follows the board -- 12383 is the worst case, the largest grid a FiestaPanel accepts (128x96) -- so it is far short of that on a Flagship or Note.",
         "type": "string",
-        "max_length": 138,
+        "max_length": 12383,
         "group": "layout",
         "example": "WOHNZIMMER   21.5° 45%\\nKUECHE       22.1° 41%"
       },
       "line1": {
         "description": "Board row 1 of the module layout, padded to the board width",
         "type": "string",
-        "max_length": 22,
+        "max_length": 128,
         "group": "layout",
         "example": "WOHNZIMMER   21.5° 45%"
       },
       "line2": {
         "description": "Board row 2 of the module layout, padded to the board width",
         "type": "string",
-        "max_length": 22,
+        "max_length": 128,
         "group": "layout",
         "example": "KUECHE       22.1° 41%"
       },
       "line3": {
         "description": "Board row 3 of the module layout, padded to the board width",
         "type": "string",
-        "max_length": 22,
+        "max_length": 128,
         "group": "layout",
         "example": "SCHLAFZIMMER 19.4° 52%"
       },
       "line4": {
         "description": "Board row 4, empty on a Note",
         "type": "string",
-        "max_length": 22,
+        "max_length": 128,
         "group": "layout",
         "example": "DRAUSSEN      8.4° 78%"
       },
       "line5": {
         "description": "Board row 5, empty on a Note",
         "type": "string",
-        "max_length": 22,
+        "max_length": 128,
         "group": "layout",
         "example": "REGEN            6.9MM"
       },
       "line6": {
         "description": "Board row 6, empty on a Note",
         "type": "string",
-        "max_length": 22,
+        "max_length": 128,
         "group": "layout",
         "example": "WIND          12KMH SW"
       }
@@ -497,13 +497,13 @@
     "station": 22,
     "indoor_name": 22,
     "outdoor_name": 22,
-    "line1": 22,
-    "line2": 22,
-    "line3": 22,
-    "line4": 22,
-    "line5": 22,
-    "line6": 22,
-    "block": 138
+    "line1": 128,
+    "line2": 128,
+    "line3": 128,
+    "line4": 128,
+    "line5": 128,
+    "line6": 128,
+    "block": 12383
   },
   "demo": {
     "name": "Netatmo Weather Demo",
@@ -562,6 +562,19 @@
         "WOHNZIMMER 21.5",
         "KUECHE     22.1",
         "SCHLAFZIMM 19.4"
+      ]
+    },
+    {
+      "device_type": "note_array",
+      "notes_wide": 2,
+      "notes_tall": 2,
+      "rows": [
+        "WOHNZIMMER           21.5C 45%",
+        "KUECHE               22.1C 41%",
+        "SCHLAFZIMMER         19.4C 52%",
+        "DRAUSSEN              8.4C 78%",
+        "REGEN                    6.9MM",
+        "WIND                  12KMH SW"
       ]
     }
   ],

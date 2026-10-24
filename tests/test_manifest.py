@@ -16,6 +16,7 @@ from plugins.netatmo_weather import DEFAULT_SECONDARY, DEFAULT_UNITS, SECONDARY_
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BOARD_SHAPES = {"flagship": (6, 22), "note": (3, 15)}
+NOTE_ROWS, NOTE_COLS = 3, 15
 COLOR_MARKER = re.compile(r"\{(?:6[3-9]|7[01])\}")
 
 # The settings the committed previews were rendered with. Changing a preview
@@ -135,19 +136,43 @@ class TestVariables:
                 assert {"condition", "value", "color"} <= set(rule), f"{field} has an incomplete rule"
 
 
+def _preview_board(preview: dict) -> BoardContext:
+    """The board a preview entry describes.
+
+    ``flagship`` and ``note`` are fixed shapes; a ``note_array`` has none of its
+    own — like the real hardware, its shape comes from ``notes_wide`` and
+    ``notes_tall`` on the entry itself.
+    """
+    if preview["device_type"] == "note_array":
+        return BoardContext(
+            device_type="note_array",
+            rows=preview["notes_tall"] * NOTE_ROWS,
+            cols=preview["notes_wide"] * NOTE_COLS,
+        )
+    return BoardContext.from_device_type(preview["device_type"])
+
+
 class TestBoardPreviews:
     def test_teaser_fits_the_narrowest_board(self, manifest):
         assert count_tiles(manifest["teaser"]) <= 15
 
     def test_preview_rows_fit_their_board(self, manifest):
         for preview in manifest["previews"]:
-            rows, cols = BOARD_SHAPES[preview["device_type"]]
-            assert len(preview["rows"]) <= rows
+            board = _preview_board(preview)
+            assert len(preview["rows"]) <= board.rows
             for row in preview["rows"]:
-                assert count_tiles(row) <= cols, f"{preview['device_type']} row is too wide"
+                assert count_tiles(row) <= board.cols, f"{preview['device_type']} row is too wide"
 
     def test_both_board_shapes_are_covered(self, manifest):
-        assert {p["device_type"] for p in manifest["previews"]} == set(BOARD_SHAPES)
+        assert set(BOARD_SHAPES) <= {p["device_type"] for p in manifest["previews"]}
+
+    def test_a_note_array_preview_exists(self, manifest):
+        """A FiestaPanel is a note array; without this the directory shows nothing for one."""
+        arrays = [p for p in manifest["previews"] if p["device_type"] == "note_array"]
+        assert arrays, "no note_array preview in manifest.json previews"
+        for preview in arrays:
+            assert 1 <= preview["notes_wide"] <= 4
+            assert 1 <= preview["notes_tall"] <= 4
 
     @pytest.mark.parametrize("device_type", sorted(BOARD_SHAPES))
     def test_previews_match_what_the_plugin_actually_renders(self, manifest, device_type, make_plugin):
@@ -156,6 +181,11 @@ class TestBoardPreviews:
         rendered = plugin.get_data(BoardContext.from_device_type(device_type)).formatted_lines
         declared = next(p["rows"] for p in manifest["previews"] if p["device_type"] == device_type)
         assert declared == rendered
+
+    def test_the_note_array_preview_matches_what_the_plugin_actually_renders(self, manifest, make_plugin):
+        preview = next(p for p in manifest["previews"] if p["device_type"] == "note_array")
+        rendered = make_plugin(modules=PREVIEW_MODULES).get_data(_preview_board(preview)).formatted_lines
+        assert preview["rows"] == rendered
 
 
 class TestDocumentation:
