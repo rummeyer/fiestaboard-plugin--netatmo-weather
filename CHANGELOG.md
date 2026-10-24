@@ -9,6 +9,14 @@ the two drift apart.
 
 ## [Unreleased]
 
+### Changed
+
+- **Board rows name the unit: `21.5°C`, `70.7°F`.** The letter is the first
+  thing to go when a row is too tight — before the trend mark, the second
+  reading or the name — and, like the rest of the detail, it goes for the whole
+  board at once. A Flagship with `SCHLAFZIMMER` on it keeps `19.4° 52%`; a Note
+  with the degree sign off shows `BUERO 21.5C 45%` where the name allows it.
+
 ## [1.2.1] — 2026-08-12
 
 Documentation only — no change to the variables, the settings or what the

@@ -339,12 +339,21 @@ def temperature_unit(units: str, sign: str) -> str:
 # --------------------------------------------------------------------------
 
 
-def row_value(reading: Reading, units: str, decimals: int, sign: str, *, secondary: str, trend: bool) -> str:
+def row_value(
+    reading: Reading,
+    units: str,
+    decimals: int,
+    sign: str,
+    *,
+    secondary: str,
+    trend: bool,
+    letter: bool = True,
+) -> str:
     """The right-hand side of a module's row — what the module measures.
 
     Temperature for anything with a thermometer, rain for a rain gauge, wind
-    for a wind gauge. The optional trend mark and secondary reading are
-    appended here and dropped by :func:`module_row` when the row is too tight.
+    for a wind gauge. The unit letter, trend mark and secondary reading are
+    appended here and dropped by :func:`board_rows` when the row is too tight.
     """
     parts: list[str] = []
     if reading.kind == "rain":
@@ -363,7 +372,7 @@ def row_value(reading: Reading, units: str, decimals: int, sign: str, *, seconda
     temperature = number(convert_temperature(reading.temperature, units), decimals)
     if not temperature:
         return ""
-    parts.append(f"{temperature}{sign}")
+    parts.append(f"{temperature}{temperature_unit(units, sign) if letter else sign}")
     if trend and reading.temp_trend in TREND_MARKS:
         parts.append(TREND_MARKS[reading.temp_trend])
     extra = secondary_value(reading, secondary)
@@ -414,6 +423,8 @@ def board_rows(
     The extras go before the names do: a Note is 15 tiles wide, so
     "WOHNZIMMER 21.5 45%" has to lose something, and dropping the humidity
     keeps the row readable where shortening the name to "WOHNZI" would not.
+    The unit letter is the cheapest extra and goes first — "21.5°" still reads
+    as a temperature, "21.5° 45%" without the humidity says less.
 
     Detail is chosen for the whole board rather than row by row, because a
     column of readings where one row happens to carry a humidity its neighbours
@@ -421,11 +432,15 @@ def board_rows(
     it could be.
     """
     names = [to_board_text(reading.name, umlauts) for reading in readings]
-    levels = [(secondary, trend), (secondary, False), ("none", False)]
+    levels = [
+        (level_secondary, level_trend, letter)
+        for level_secondary, level_trend in [(secondary, trend), (secondary, False), ("none", False)]
+        for letter in (True, False)
+    ]
     values: list[str] = []
-    for level_secondary, level_trend in levels:
+    for level_secondary, level_trend, level_letter in levels:
         values = [
-            row_value(reading, units, decimals, sign, secondary=level_secondary, trend=level_trend)
+            row_value(reading, units, decimals, sign, secondary=level_secondary, trend=level_trend, letter=level_letter)
             for reading in readings
         ]
         if all(not value or len(name) + 1 + len(value) <= width for name, value in zip(names, values, strict=True)):

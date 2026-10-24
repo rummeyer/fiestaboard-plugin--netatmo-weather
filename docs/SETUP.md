@@ -134,7 +134,7 @@ A measurement your station cannot make comes out empty rather than as a zero —
 
 ### The degree sign
 
-Vestaboard character 62 is a degree sign on a Flagship. A Note has a different flap at that position: some print a heart, some print nothing at all. The plugin cannot tell which flap yours has, so `auto` shows the sign only where it is known to print as one: a Flagship reads `WOHNZIMMER 21.5°`, a Note reads `WOHNZIMMER 21.5` and spends that tile on the room name instead.
+Vestaboard character 62 is a degree sign on a Flagship. A Note has a different flap at that position: some print a heart, some print nothing at all. The plugin cannot tell which flap yours has, so `auto` shows the sign only where it is known to print as one: a Flagship reads `WOHNZIMMER 21.5°C`, a Note reads `WOHNZIMMER 21.5` and spends those tiles on the room name instead. The `C` is added only where every row on the board has room for it.
 
 Set it to **Always** if your Note does print something there and you want it; set it to **Never** to drop it everywhere, including the Flagship.
 

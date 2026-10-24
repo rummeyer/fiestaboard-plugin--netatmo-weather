@@ -160,6 +160,7 @@ Credentials can also come from `NETATMO_CLIENT_ID`, `NETATMO_CLIENT_SECRET` and 
 ## Features
 
 - One row per module, laid out for the board it renders on — a Flagship shows six modules with humidity, a Note shows three without
+- Rows name the unit (`21.5°C`) wherever every row has room for the letter, and drop it before anything else
 - Detail is chosen for the whole board, not row by row: a column where one row kept a humidity its neighbours dropped reads as a mistake
 - Module picker fed from the account itself, with ordering and per-module short names
 - Metric and imperial, converted here because Netatmo always reports metric whatever the account displays

@@ -14,6 +14,7 @@ from plugins.netatmo_weather import (
     NetatmoWeatherPlugin,
     Reading,
     apply_custom_names,
+    board_rows,
     compass,
     convert_pressure,
     convert_rain,
@@ -246,17 +247,32 @@ class TestRows:
         return module_row(reading or indoor_reading(), width, "metric", 1, sign, **options)
 
     def test_name_left_reading_right_filling_the_board_width(self):
-        assert self.row() == "WOHNZIMMER   21.5° 45%"
+        assert self.row() == "WOHNZIMMER  21.5°C 45%"
         assert len(self.row()) == 22
 
     def test_the_trend_mark_is_appended_when_asked_for(self):
+        assert self.row(indoor_reading(name="Büro"), trend=True) == "BUERO     21.5°C + 45%"
+
+    def test_the_unit_letter_goes_before_any_other_extra(self):
         assert self.row(trend=True) == "WOHNZIMMER 21.5° + 45%"
+
+    def test_the_unit_letter_is_dropped_for_the_whole_board_or_not_at_all(self):
+        rooms = [indoor_reading(), indoor_reading(name="Schlafzimmer")]
+        rows = board_rows(rooms, 22, "metric", 1, "°", secondary="humidity", trend=False)
+        assert rows == ["WOHNZIMMER   21.5° 45%", "SCHLAFZIMMER 21.5° 45%"]
+
+    def test_the_unit_letter_follows_the_units(self):
+        row = module_row(indoor_reading(), 22, "imperial", 1, "°", secondary="humidity", trend=False)
+        assert row == "WOHNZIMMER  70.7°F 45%"
+
+    def test_a_note_gets_the_letter_without_the_sign_when_it_fits(self):
+        assert self.row(indoor_reading(name="Büro"), width=15, sign="") == "BUERO 21.5C 45%"
 
     def test_co2_and_battery_are_alternative_second_readings(self):
         office = indoor_reading(name="Büro")
-        assert self.row(office, secondary="co2").endswith("21.5° 612PPM")
-        assert self.row(office, secondary="battery").endswith("21.5° 78%")
-        assert self.row(office, secondary="none").endswith("21.5°")
+        assert self.row(office, secondary="co2").endswith("21.5°C 612PPM")
+        assert self.row(office, secondary="battery").endswith("21.5°C 78%")
+        assert self.row(office, secondary="none").endswith("21.5°C")
 
     def test_a_narrow_board_drops_the_extras_before_it_cuts_the_name(self):
         """A Note is 15 wide: dropping the humidity beats shortening the name.
@@ -658,8 +674,8 @@ class TestOptions:
 
     def test_the_current_reading_tells_two_identical_rooms_apart(self, make_plugin):
         options = make_plugin().get_options(OptionsRequest(options_id="modules"))
-        assert "21.5°" in options[0].description
-        assert options[0].preview == "WOHNZIMMER 21.5°"
+        assert "21.5°C" in options[0].description
+        assert options[0].preview == "WOHNZIMMER 21.5°C"
 
     def test_an_unconfigured_plugin_asks_for_credentials_instead_of_failing(self, make_plugin, monkeypatch):
         for name in ("NETATMO_CLIENT_ID", "NETATMO_CLIENT_SECRET", "NETATMO_REFRESH_TOKEN"):
