@@ -1,7 +1,7 @@
 {
   "id": "netatmo_weather",
   "name": "Netatmo Weather",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Live readings from a Netatmo Weather Station — room temperature, CO2, humidity, outdoor conditions, rain and wind — one module per board row.",
   "author": "Oliver Rummeyer",
   "repository": "https://github.com/rummeyer/fiestaboard-plugin--netatmo-weather",
@@ -506,42 +506,65 @@
     "block": 12383
   },
   "demo": {
-    "name": "Netatmo Weather Demo",
-    "device_type": "flagship",
-    "template": [
-      "{{netatmo_weather.block}}",
-      "",
-      "",
-      "",
-      "",
-      ""
-    ],
-    "line_metadata": [
-      {
-        "alignment": "left",
-        "wrap": false
-      },
-      {
-        "alignment": "left",
-        "wrap": false
-      },
-      {
-        "alignment": "left",
-        "wrap": false
-      },
-      {
-        "alignment": "left",
-        "wrap": false
-      },
-      {
-        "alignment": "left",
-        "wrap": false
-      },
-      {
-        "alignment": "left",
-        "wrap": false
-      }
-    ]
+    "flagship": {
+      "name": "Netatmo Weather Demo",
+      "template": [
+        "{{netatmo_weather.block}}",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "line_metadata": [
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        }
+      ]
+    },
+    "note": {
+      "name": "Netatmo Weather Demo",
+      "template": [
+        "{{netatmo_weather.block}}",
+        "",
+        ""
+      ],
+      "line_metadata": [
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        }
+      ]
+    }
   },
   "teaser": "WOHNZIMMER 21.5",
   "previews": [

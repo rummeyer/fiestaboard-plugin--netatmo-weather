@@ -9,6 +9,8 @@ the two drift apart.
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-10-24
+
 ### Changed
 
 - **Board rows name the unit: `21.5°C`, `70.7°F`.** The letter is the first
@@ -23,6 +25,8 @@ the two drift apart.
   assumed a Flagship was the largest board. A FiestaPanel accepts grids up to
   128x96, and FiestaBoard's geometry conformance suite renders one, which
   overran both. Raised to 12383 and 128.
+- The demo page now has a Note variant. The manifest only declared a
+  Flagship demo, so a Note owner got a six-line Flagship page.
 
 ### Added
 
