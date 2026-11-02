@@ -9,6 +9,18 @@ the two drift apart.
 
 ## [Unreleased]
 
+## [1.3.1] — 2026-11-02
+
+### Fixed
+
+- While Netatmo fails, the board goes on showing the last good readings for up
+  to three hours, rather than `#REF` — the empty variable FiestaBoard prints
+  as a formula error. Without any yet, the plugin is unavailable as before.
+- After a failure the plugin waits before asking Netatmo again: 30 seconds,
+  then twice as long each time, up to 10 minutes. FiestaBoard keeps only what
+  worked, so it asked at every render — some 600 times an hour while
+  Open-Meteo was overloaded on 2 November.
+
 ## [1.3.0] — 2026-10-24
 
 ### Changed

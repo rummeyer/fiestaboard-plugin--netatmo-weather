@@ -702,3 +702,60 @@ def _raise(error):
         raise error
 
     return _stub
+
+
+class TestWhileNetatmoFails:
+    """The last good readings stay on the board, and a failing service is not asked at every render."""
+
+    @pytest.fixture
+    def clock(self):
+        return [1000.0]
+
+    @pytest.fixture
+    def plugin(self, make_plugin, clock):
+        plugin = make_plugin()
+        plugin._fallback = netatmo_weather.Fallback(clock=lambda: clock[0])
+        return plugin
+
+    @staticmethod
+    def _failing(monkeypatch, plugin, asked):
+        def fail(*args, **kwargs):
+            asked.append(1)
+            raise NetatmoError("Service temporarily unavailable")
+
+        monkeypatch.setattr(plugin, "station_body", fail)
+
+    def test_the_last_good_readings_are_shown_after_a_failure(self, plugin, monkeypatch):
+        good = plugin.fetch_data()
+        self._failing(monkeypatch, plugin, [])
+        result = plugin.fetch_data()
+        assert result.available
+        assert result.formatted_lines == good.formatted_lines
+
+    def test_without_good_readings_it_is_unavailable_as_before(self, plugin, monkeypatch):
+        self._failing(monkeypatch, plugin, [])
+        result = plugin.fetch_data()
+        assert not result.available
+        assert result.error == "Service temporarily unavailable"
+
+    def test_after_a_failure_it_waits_before_asking_again(self, plugin, monkeypatch, clock):
+        asked = []
+        self._failing(monkeypatch, plugin, asked)
+        for _ in range(5):
+            plugin.fetch_data()
+        assert len(asked) == 1
+        clock[0] += netatmo_weather.RETRY_FIRST_SECONDS
+        plugin.fetch_data()
+        assert len(asked) == 2
+
+    def test_readings_too_old_are_no_longer_shown(self, plugin, monkeypatch, clock):
+        plugin.fetch_data()
+        self._failing(monkeypatch, plugin, [])
+        clock[0] += netatmo_weather.STALE_SECONDS + 1
+        assert not plugin.fetch_data().available
+
+    def test_a_config_change_forgets_the_last_readings(self, plugin, monkeypatch):
+        plugin.fetch_data()
+        plugin.on_config_change({}, {"module_names": {"x": "Garden"}})
+        self._failing(monkeypatch, plugin, [])
+        assert not plugin.fetch_data().available

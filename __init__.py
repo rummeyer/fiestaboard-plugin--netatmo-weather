@@ -18,6 +18,7 @@ import logging
 import os
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
@@ -35,6 +36,62 @@ from src.plugins.base import (
 )
 
 logger = logging.getLogger(__name__)
+
+# When a fetch fails, the board goes on showing what the last good one read,
+# for up to STALE_SECONDS, rather than an empty variable — FiestaBoard prints
+# #REF for that. And the plugin waits before asking again, twice as long after
+# each failure up to RETRY_MAX_SECONDS: FiestaBoard caches only what worked,
+# so every render would otherwise ask a service that is down (2.11.2026: some
+# 600 requests an hour while Open-Meteo was overloaded).
+STALE_SECONDS = 3 * 3600
+RETRY_FIRST_SECONDS = 30
+RETRY_MAX_SECONDS = 600
+
+
+class Fallback:
+    """The last good result per board, and when to ask again after a failure."""
+
+    def __init__(self, clock: Callable[[], float] = time.monotonic):
+        self._clock = clock
+        self._lock = threading.Lock()
+        self._good: dict[str, tuple[float, PluginResult]] = {}
+        self._failures = 0
+        self._retry_at = 0.0
+        self.error = ""
+
+    def waiting(self) -> bool:
+        """Whether the last failure is too recent to ask again yet."""
+        with self._lock:
+            return self._clock() < self._retry_at
+
+    def succeeded(self, key: str, result: PluginResult) -> None:
+        with self._lock:
+            self._good[key] = (self._clock(), result)
+            self._failures = 0
+            self._retry_at = 0.0
+            self.error = ""
+
+    def failed(self, error: str) -> None:
+        with self._lock:
+            self._failures += 1
+            wait = min(RETRY_FIRST_SECONDS * 2 ** (self._failures - 1), RETRY_MAX_SECONDS)
+            self._retry_at = self._clock() + wait
+            self.error = error
+
+    def last(self, key: str) -> PluginResult | None:
+        """The last good result for this board, if it is recent enough to show."""
+        with self._lock:
+            good = self._good.get(key)
+            if good is None or self._clock() - good[0] > STALE_SECONDS:
+                return None
+            return good[1]
+
+    def clear(self) -> None:
+        with self._lock:
+            self._good.clear()
+            self._failures = 0
+            self._retry_at = 0.0
+            self.error = ""
 
 TOKEN_URL = "https://api.netatmo.com/oauth2/token"
 STATION_URL = "https://api.netatmo.com/api/getstationsdata"
@@ -574,10 +631,15 @@ class NetatmoWeatherPlugin(PluginBase):
         # fetch_data runs once per board in a thread pool, so two Flagship and
         # Note renders can land on an expired token at the same moment.
         self._token_lock = threading.Lock()
+        self._fallback = Fallback()
 
     @property
     def plugin_id(self) -> str:
         return "netatmo_weather"
+
+    def on_config_change(self, old_config: dict[str, Any], new_config: dict[str, Any]) -> None:
+        """Other modules, names or account: never fill a gap with what the old settings read."""
+        self._fallback.clear()
 
     # -- configuration ----------------------------------------------------
 
@@ -786,6 +848,10 @@ class NetatmoWeatherPlugin(PluginBase):
         if not (client_id and client_secret and refresh_token):
             return PluginResult(available=False, error="Netatmo credentials are not configured")
 
+        key = self._cache_key(self.board)
+        if self._fallback.waiting():
+            return self._fallback.last(key) or PluginResult(available=False, error=self._fallback.error)
+
         try:
             readings = apply_custom_names(
                 parse_stations(self.station_body()),
@@ -793,19 +859,26 @@ class NetatmoWeatherPlugin(PluginBase):
             )
         except NetatmoError as error:
             logger.warning("Netatmo fetch failed: %s", error)
-            return PluginResult(available=False, error=str(error))
+            return self._failed(key, str(error))
         except Exception as error:  # noqa: BLE001 — a bad payload must not break the render loop
             logger.exception("Unexpected error reading the Netatmo station")
-            return PluginResult(available=False, error=str(error))
+            return self._failed(key, str(error))
 
         if not readings:
             return PluginResult(available=False, error="The Netatmo account has no weather station")
 
-        return PluginResult(
+        result = PluginResult(
             available=True,
             data=self._build_data(readings),
             formatted_lines=self._build_lines(readings),
         )
+        self._fallback.succeeded(key, result)
+        return result
+
+    def _failed(self, key: str, error: str) -> PluginResult:
+        """After a failed fetch, the station's last good readings while they are recent, else none."""
+        self._fallback.failed(error)
+        return self._fallback.last(key) or PluginResult(available=False, error=error)
 
     def _options(self) -> tuple[str, int, str, bool, str]:
         """Display settings, each clamped to what the code actually handles."""
